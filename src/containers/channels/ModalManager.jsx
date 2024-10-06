@@ -6,14 +6,11 @@
 
 import React from 'react';
 import {
-  AddMemberModal,
   ManageMembersModal,
   DeleteChannelModal,
   NewChannelModal,
   LeaveChannelModal,
-  ViewChannelDetailsModal,
   ViewMembersModal,
-  EditChannelModal,
   JoinMeetingModal,
 } from '../../components/ChannelModals';
 
@@ -23,7 +20,6 @@ const ModalManager = ({
   activeChannel,
   meetingInfo,
   userId,
-  onAddMember,
   handleChannelDeletion,
   handleJoinMeeting,
   handleMessageAll,
@@ -41,16 +37,6 @@ const ModalManager = ({
   }
 
   switch (modal) {
-    case 'AddMembers':
-      return (
-        <AddMemberModal
-          onClose={() => setModal('')}
-          channel={activeChannel}
-          onSubmit={onAddMember}
-          handlePickerChange={handlePickerChange}
-          members={activeChannelMemberships}
-        />
-      );
     case 'ManageMembers':
       return (
         <ManageMembersModal
@@ -70,14 +56,6 @@ const ModalManager = ({
           onCreateChannel={onCreateChannel}
         />
       );
-    case 'ViewDetails':
-      return (
-        <ViewChannelDetailsModal
-          onClose={() => setModal('')}
-          channel={activeChannel}
-          moderators={activeChannelModerators}
-        />
-      );
     case 'LeaveChannel':
       return (
         <LeaveChannelModal
@@ -93,14 +71,6 @@ const ModalManager = ({
           channel={activeChannel}
           members={activeChannelMemberships}
           moderators={activeChannelModerators}
-        />
-      );
-    case 'EditChannel':
-      return (
-        <EditChannelModal
-          onClose={() => setModal('')}
-          channel={activeChannel}
-          userId={userId}
         />
       );
     case 'DeleteChannel':

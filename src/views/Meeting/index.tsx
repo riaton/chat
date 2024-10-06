@@ -11,12 +11,13 @@ import {
 } from 'amazon-chime-sdk-component-library-react';
 
 import { StyledLayout, StyledContent } from './Styled';
+// メッセージコンポーネント
 import NavigationControl from '../../containers/Navigation/NavigationControl';
 import { useNavigation } from '../../providers/NavigationProvider';
+//ミーティング詳細 DarkModeとかMeetingIdとか書いてあるやつ
 import MeetingDetails from '../../containers/MeetingDetails';
 import MeetingControls from '../../containers/MeetingControls';
 import useMeetingEndRedirect from '../../hooks/useMeetingEndRedirect';
-import MeetingMetrics from '../../containers/MeetingMetrics';
 
 const MeetingView = () => {
   useMeetingEndRedirect();
@@ -26,14 +27,13 @@ const MeetingView = () => {
     <UserActivityProvider>
       <StyledLayout showNav={showNavbar} showRoster={showRoster} showChat={showChat}>
         <StyledContent>
-          <MeetingMetrics />
           <VideoTileGrid
             className="videos"
             noRemoteVideoView={<MeetingDetails />}
           />
           <MeetingControls />
         </StyledContent>
-        <NavigationControl />
+        <NavigationControl /> 
       </StyledLayout>
     </UserActivityProvider>
   );

@@ -45,7 +45,7 @@ const MeetingRoster = () => {
         searchValue={filter}
         onSearch={handleSearch}
         onClose={closeRoster}
-        title="Present"
+        title="参加者"
         badge={attendees.length}
       />
       <RosterGroup>{attendeeItems}</RosterGroup>

@@ -8,7 +8,6 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Badge,
   InfiniteList,
   PopOverItem,
   Modal,
@@ -59,7 +58,6 @@ const Messages = ({
     const oldMessages = await listChannelMessages(
       activeChannelRef.current.ChannelArn,
       userId,
-      activeChannelRef.current.SubChannelId,
       channelMessageTokenRef.current
     );
     const newMessages = [...oldMessages.Messages, ...messagesRef.current];
@@ -105,33 +103,6 @@ const Messages = ({
     </Modal>
   );
 
-  const handleSubChannelIdCopyClick = (_e) => {
-    // Create new element
-    const el = document.createElement("textarea");
-    // Set value (string to be copied)
-    el.value = activeChannelRef.current.SubChannelId;
-    // Set non-editable to avoid focus and move outside of view
-    el.setAttribute("readonly", "");
-    el.style = { position: "absolute", left: "-9999px" };
-    document.body.appendChild(el);
-    // Select text inside element
-    el.select();
-    // Copy text to clipboard
-    document.execCommand("copy");
-    // Remove temporary element
-    document.body.removeChild(el);
-
-    notificationDispatch({
-      type: 0,
-      payload: {
-        message: "ChannelId copied to clipboard!",
-        severity: "info",
-        autoClose: true,
-        autoCloseDelay: 1000,
-      },
-    });
-  };
-
   const handleShowRedactModal = (messageId) => {
     setRedactingMessageId(messageId);
     setShowRedactModal(true);
@@ -144,7 +115,7 @@ const Messages = ({
 
   const redact = async () => {
     try {
-      await redactChannelMessage(channelArn, redactingMessageId, userId, activeChannelRef.current.SubChannelId);
+      await redactChannelMessage(channelArn, redactingMessageId, userId);
     }
     catch {
       notificationDispatch({
@@ -197,8 +168,7 @@ const Messages = ({
         editingMessageId,
         newText,
         metadata,
-        userId,
-        activeChannelRef.current.SubChannelId
+        userId
       );
     }
     catch {
@@ -214,13 +184,6 @@ const Messages = ({
   };
 
   const flattenedMessages = messages.map((m) => {
-    if (m.OldMessageUpdateDisabled) {
-      return <Badge
-        key={`UpdateSubChannelMembership${activeChannelRef.current.SubChannelId}`}
-        value={'*** You have been moved to a new subchannel. ***'}
-        className="date-header"
-      />
-    };
     const content = !m.Content || m.Redacted ? '(Deleted)' : m.Content;
     let editedNote;
     if (m.LastEditedTimestamp && !m.Redacted) {
@@ -355,18 +318,7 @@ const Messages = ({
     <div className="message-list-container">
       {showDiscardModal && discardModal}
       {showRedactModal && redactModal}
-      {activeChannelRef.current.SubChannelId ? (
-        <div className="message-list-header">
-          <a className="user-info" href="#">
-            {channelName}
-            <span onClick={handleSubChannelIdCopyClick} className="tooltiptext">
-              Click to copy channelId to clipboard!
-            </span>
-          </a>
-        </div>
-      ) : (
-        <div className="message-list-header">{channelName}</div>
-      )}
+      <div className="message-list-header">{channelName}</div>
       <InfiniteList
         style={{ display: 'flex', flexGrow: '1' }}
         items={messageList}

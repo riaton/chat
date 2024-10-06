@@ -43,13 +43,13 @@ const LoginWithCognito = (props) => {
         css="font-size: 0.875rem !important; line-height: 3rem !important;"
         level="2"
       >
-        Enter your information and select Sign in or Register
+        ユーザーIDとパスワードを入力してください
       </Heading>
       <form onSubmit={onLogin} className="signin-form">
         <div className="input-container">
           <FormField
             field={Input}
-            label="User name"
+            label="ユーザーID"
             className="input username-input"
             onChange={(e) => onUserName(e)}
             value={userName}
@@ -59,20 +59,20 @@ const LoginWithCognito = (props) => {
           />
           <FormField
             field={Input}
-            label="Password"
+            label="パスワード"
             fieldProps={{ type: 'password' }}
             className="input password-input"
             onChange={(e) => onPassword(e)}
             value={password}
             showClear
             layout="horizontal"
-            infoText="Minimum 8 characters, at least 1 uppercase, 1 number, 1 special character"
+            infoText="最低8文字(1文字以上の大文字, 1文字以上の数字, 1文字以上の特殊文字を含む)"
           />
         </div>
         <div className="signin-buttons">
-          <Button onClick={onLogin} label="Sign in" variant="primary" />
+          <Button onClick={onLogin} label="ログイン" variant="primary" />
           <span className="or-span">or</span>
-          <Button onClick={onRegister} label="Register" variant="secondary" />
+          <Button onClick={onRegister} label="新規登録" variant="secondary" />
         </div>
       </form>
     </div>

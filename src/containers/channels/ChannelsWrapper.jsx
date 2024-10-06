@@ -11,7 +11,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   PopOverItem,
-  PopOverSeparator,
   PopOverSubMenu,
   IconButton,
   Dots,
@@ -23,6 +22,7 @@ import {
 } from 'amazon-chime-sdk-component-library-react';
 import { MeetingSessionConfiguration } from 'amazon-chime-sdk-js';
 import { useHistory } from 'react-router-dom';
+import { useTheme } from 'styled-components';
 import {
   Persistence,
   MessageType,
@@ -30,11 +30,9 @@ import {
   createChannelMembership,
   createChannel,
   updateChannel,
-  listChannelMessages,
   sendChannelMessage,
   listChannels,
   listChannelMembershipsForAppInstanceUser,
-  listChannelsModeratedByAppInstanceUser,
   deleteChannel,
   describeChannel,
   listChannelMemberships,
@@ -64,7 +62,6 @@ import {
   PresenceAutoStatus,
   PresenceMode,
   PUBLISH_INTERVAL,
-  toPresenceMap,
   toPresenceMessage,
 } from '../../utilities/presence';
 
@@ -82,108 +79,59 @@ const ChannelsWrapper = () => {
   const userPermission = useUserPermission();
   const isAuthenticatedRef = useRef(isAuthenticated);
   const messagingUserArn = `${appConfig.appInstanceArn}/user/${userId}`;
-  const [anchorEl, setAnchorEl] = React.useState(null);
-  const [elasticChannelArnList, setElastiChannelArnList] = useState([]);
-  const [standardChannelArnList, setStandardChannelArnList] = useState([]);
-  const maximumMembershipsAllowed = '1000000';
-
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
   const {
-    activeChannelRef,
-    channelList,
-    channelListRef,
-    channelListModerator,
-    setChannelListModerator,
-    setChannelList,
-    setActiveChannel,
-    activeChannel,
-    activeChannelMemberships,
-    setActiveChannelMemberships,
-    setChannelMessageToken,
-    unreadChannels,
-    setUnreadChannels,
-    hasMembership,
-    meetingInfo,
+    activeChannelRef, // 選択されているチャネルを参照
+    channelList, // チャネルリスト
+    channelListRef, // チャネルリストを参照
+    setChannelList, // チャネルリストを設定
+    setActiveChannel, // 選択されているチャネルを設定
+    activeChannel, // 選択されているチャネル
+    activeChannelMemberships, // 選択されているチャネルのメンバー一覧
+    setActiveChannelMemberships, // 選択されているチャネルのメンバー一覧を設定
+    unreadChannels, // 選択されていないチャネル一覧
+    setUnreadChannels, // 選択されていないチャネル一覧を設定
+    hasMembership, //そのチャネルにメンバーとして参加しているかどうか
+    meetingInfo, 
     setMeetingInfo,
-    activeView,
-    setActiveView,
-    moderatedChannel,
-    setModeratedChannel,
   } = useChatChannelState();
-  const { setMessages } = useChatMessagingState();
+  const { setMessages } = useChatMessagingState(); // そのChannelのメッセージ一覧を設定
   const { setAppMeetingInfo } = useAppState();
+  const currentTheme = useTheme();
 
   useEffect(() => {
     isAuthenticatedRef.current = isAuthenticated;
   });
 
-  const handleSwichViewClick = (e) => {
-    if (activeView === 'Moderator') {
-      setActiveView('User');
-      setActiveChannel('');
-    } else {
-      setActiveView('Moderator');
-    }
-  };
-
   // get all channels
   useEffect(() => {
     if (!userId) return;
     const fetchChannels = async () => {
-      if (activeView === 'User') {
-        const userChannelMemberships = await listChannelMembershipsForAppInstanceUser(
-          userId
-        );
-        const userChannelList = userChannelMemberships.map(
-          (channelMembership) => {
-            const channelSummary = channelMembership.ChannelSummary;
-            channelSummary.SubChannelId =
-              channelMembership.AppInstanceUserMembershipSummary.SubChannelId;
+      const userChannelMemberships = await listChannelMembershipsForAppInstanceUser(
+        userId
+      );
+      const userChannelList = userChannelMemberships.map(
+        (channelMembership) => {
+          const channelSummary = channelMembership.ChannelSummary;
+          return channelSummary;
+        }
+      );
+      const publicChannels = await listChannels(
+        appConfig.appInstanceArn,
+        userId
+      );
 
-            return channelSummary;
-          }
-        );
-
-        const publicChannels = await listChannels(
-          appConfig.appInstanceArn,
-          userId
-        );
-
-        const moderatorChannels = await listChannelsModeratedByAppInstanceUser(
-          userId
-        );
-        const moderatorChannelList = moderatorChannels.map(
-          (channelMembership) => channelMembership.ChannelSummary
-        );
-
-        const tempModeratorChannelList = [...moderatorChannelList];
-
-        setChannelList(
-          mergeArrayOfObjects(
-            mergeArrayOfObjects(publicChannels, userChannelList, 'ChannelArn'),
-            moderatorChannelList,
-            'ChannelArn'
-          )
-        );
-      } else {
-        setModeratedChannel(activeChannel);
-      }
-    await publishStatusToAllChannels();
+      setChannelList(
+        mergeArrayOfObjects(publicChannels, userChannelList, 'ChannelArn')
+      );
+      await publishStatusToAllChannels();
     };
     fetchChannels();
-  }, [userId, activeView]);
+  }, [userId]);
 
   useEffect(() => {
     if (!isAuthenticated) {
       resetAWSClients();
       console.clear();
-      setActiveView('User');
       setActiveChannel('');
       setChannelList([]);
     };
@@ -198,7 +146,7 @@ const ChannelsWrapper = () => {
       fetchMemberships();
       publishStatusToAllChannels();
     }
-  }, [activeChannel.ChannelArn, activeChannel.SubChannelId]);
+  }, [activeChannel.ChannelArn]);
 
   // track channel presence
   useEffect(() => {
@@ -215,20 +163,19 @@ const ChannelsWrapper = () => {
     }
   }, [meetingInfo]);
 
-  function startPublishStatusWithInterval() {
+  function startPublishStatusWithInterval() { // ステータスを定期的に送信？
     let publishTimeout;
     (async function publishStatusWithInterval() {
       if (!isAuthenticatedRef.current) {
         clearTimeout(publishTimeout);
         return;
       }
-      await updateChannelArnLists();
       await publishStatusToAllChannels();
       publishTimeout = setTimeout(publishStatusWithInterval, PUBLISH_INTERVAL);
     })();
   }
 
-  function computeAutoStatusForAChannel(channel) {
+  function computeAutoStatusForAChannel(channel) { // チャネルのステータスを計算?
     const persistedPresence = JSON.parse(channel.Metadata || '{}').Presence;
     const isCustomStatus =
       persistedPresence && persistedPresence.filter((p) => p.u === userId)[0];
@@ -245,34 +192,19 @@ const ChannelsWrapper = () => {
     }
   }
 
-  const updateChannelArnLists = async () => {
-    for (const channel of channelList) {
-      if (!standardChannelArnList.includes(channel.ChannelArn)) {
-        let newChannel;
-        newChannel = await describeChannel(channel.ChannelArn, userId);
-        if (newChannel) {
-          standardChannelArnList.push(channel.ChannelArn);
-          setStandardChannelArnList(standardChannelArnList);
-        }
-      }
-    }
-  }
-
-  async function publishStatusToAllChannels() {
+  async function publishStatusToAllChannels() { // チャネルにステータスを送信？
     const servicePromises = [];
     for (const channel of channelListRef.current) {
       const channelType = JSON.parse(channel.Metadata || '{}').ChannelType;
-      if (!channel.SubChannelId && !elasticChannelArnList.includes(channel.ChannelArn) && channelType != 'PUBLIC_ELASTIC') { //Elastic channels doesnt support presence
-        const status = computeAutoStatusForAChannel(channel);
-        if (status) {
-          servicePromises.push(sendChannelMessage(
-            channel.ChannelArn,
-            toPresenceMessage(PresenceMode.Auto, status, true),
-            Persistence.NON_PERSISTENT,
-            MessageType.CONTROL,
-            member,
-          ));
-        }
+      const status = computeAutoStatusForAChannel(channel);
+      if (status) {
+        servicePromises.push(sendChannelMessage(
+          channel.ChannelArn,
+          toPresenceMessage(PresenceMode.Auto, status, true),
+          Persistence.NON_PERSISTENT,
+          MessageType.CONTROL,
+          member,
+        ));
       }
     }
     return await Promise.all(servicePromises);
@@ -284,12 +216,10 @@ const ChannelsWrapper = () => {
         <React.Fragment key={channel.ChannelArn}>
           <ChannelItem
             key={channel.ChannelArn}
-            name={(channel.SubChannelId || elasticChannelArnList.includes(channel.ChannelArn)
-              || JSON.parse(channel.Metadata || '{}').ChannelType == 'PUBLIC_ELASTIC') ? '(Elastic) ' + channel.Name : channel.Name}
+            name={channel.Name}
             actions={loadUserActions(userPermission.role, channel)}
             isSelected={
-              channel.ChannelArn === activeChannel.ChannelArn &&
-              (activeChannel.SubChannelId == null || activeView === 'User')
+              channel.ChannelArn === activeChannel.ChannelArn
             }
             onClick={(e) => {
               e.stopPropagation();
@@ -310,7 +240,7 @@ const ChannelsWrapper = () => {
       dispatch({
         type: 0,
         payload: {
-          message: 'Error, channel name cannot be blank.',
+          message: 'エラー。チャネル名は0文字にはできません',
           severity: 'error',
         },
       });
@@ -321,7 +251,6 @@ const ChannelsWrapper = () => {
         newName,
         mode,
         privacy,
-        null,
         userId
       );
       if (channelArn) {
@@ -333,7 +262,7 @@ const ChannelsWrapper = () => {
           dispatch({
             type: 0,
             payload: {
-              message: 'Successfully created channel.',
+              message: 'チャネルの作成に成功しました',
               severity: 'success',
               autoClose: true,
             },
@@ -344,7 +273,7 @@ const ChannelsWrapper = () => {
           dispatch({
             type: 0,
             payload: {
-              message: 'Error, could not retrieve channel information.',
+              message: 'エラー。チャネル情報の取得に失敗しました',
               severity: 'error',
               autoClose: false,
             },
@@ -390,7 +319,7 @@ const ChannelsWrapper = () => {
   const startMeeting = async (e) => {
     e.preventDefault();
 
-    let meetingName = `${activeChannel.Name} Instant Meeting`;
+    let meetingName = `${activeChannel.Name} 会議`;
 
     // Create Meeting Channel and Memberships from existing Channel
     const meetingChannelArn = await createChannel(
@@ -399,7 +328,6 @@ const ChannelsWrapper = () => {
       meetingName,
       'RESTRICTED',
       'PRIVATE',
-      null,
       userId
     );
     const meetingChannel = await describeChannel(meetingChannelArn, userId);
@@ -475,7 +403,7 @@ const ChannelsWrapper = () => {
       dispatch({
         type: 0,
         payload: {
-          message: `Successfully joined ${activeChannel.Name}`,
+          message: `チャネル「${activeChannel.Name}」に参加しました`,
           severity: 'success',
           autoClose: true,
         },
@@ -484,50 +412,7 @@ const ChannelsWrapper = () => {
       dispatch({
         type: 0,
         payload: {
-          message: 'Error occurred. Unable to join channel.',
-          severity: 'error',
-          autoClose: true,
-        },
-      });
-    }
-  };
-
-  const onAddMember = async () => {
-    if (!selectedMember) {
-      dispatch({
-        type: 0,
-        payload: {
-          message: 'Error, user name cannot be blank.',
-          severity: 'error',
-        },
-      });
-      return;
-    }
-
-    try {
-      const membership = await createChannelMembership(
-        activeChannel.ChannelArn,
-        `${appConfig.appInstanceArn}/user/${selectedMember.value}`,
-        userId
-      );
-      const memberships = activeChannelMemberships;
-      memberships.push({ Member: membership });
-      setActiveChannelMemberships(memberships);
-      channelIdChangeHandler(activeChannel);
-      dispatch({
-        type: 0,
-        payload: {
-          message: `New ${selectedMember.label} successfully added to ${activeChannel.Name}`,
-          severity: 'success',
-          autoClose: true,
-        },
-      });
-      setModal('');
-    } catch (err) {
-      dispatch({
-        type: 0,
-        payload: {
-          message: 'Error occurred. Member not added to channel.',
+          message: 'エラー。チャネルに参加できませんでした',
           severity: 'error',
           autoClose: true,
         },
@@ -543,21 +428,18 @@ const ChannelsWrapper = () => {
 
     var isModerator = false;
     const channelType = JSON.parse(channel.Metadata || '{}').ChannelType;
-    // Moderator is for channel only, not subChannel
-    if (!channel.SubChannelId) {
-      try {
-        mods = await listChannelModerators(channel.ChannelArn, userId);
-        setActiveChannelModerators(mods);
-      } catch (err) {
-        if (channel.Privacy != 'PUBLIC')
-          console.error('ERROR', err);
-      }
-
-      isModerator =
-        mods?.find(
-          (moderator) => moderator.Moderator.Arn === messagingUserArn
-        ) || false;
+    try {
+      mods = await listChannelModerators(channel.ChannelArn, userId);
+      setActiveChannelModerators(mods);
+    } catch (err) {
+      if (channel.Privacy != 'PUBLIC')
+        console.error('ERROR', err);
     }
+
+    isModerator =
+      mods?.find(
+        (moderator) => moderator.Moderator.Arn === messagingUserArn
+      ) || false;
     // Assessing user role for given channel
     userPermission.setRole(isModerator ? 'moderator' : 'user');
 
@@ -578,11 +460,10 @@ const ChannelsWrapper = () => {
     setActiveChannel('');
     setMessages([]);
     setModal('');
-    setActiveView('User');
     dispatch({
       type: 0,
       payload: {
-        message: 'Channel successfully deleted.',
+        message: 'チャネルを削除しました',
         severity: 'success',
         autoClose: true,
       },
@@ -634,7 +515,6 @@ const ChannelsWrapper = () => {
     await meetingManager.join(meetingSessionConfiguration);
 
     setAppMeetingInfo(JoinInfo.Meeting.MeetingId, member.username);
-
     setModal('');
     setMeetingInfo(null);
 
@@ -643,7 +523,6 @@ const ChannelsWrapper = () => {
 
   const handleMessageAll = async (e, meetingChannelArn) => {
     e.preventDefault();
-
     setModal('');
     setMeetingInfo(null);
     
@@ -664,7 +543,7 @@ const ChannelsWrapper = () => {
       dispatch({
         type: 0,
         payload: {
-          message: 'Successfully removed members from the channel.',
+          message: 'メンバーを削除しました',
           severity: 'success',
           autoClose: true,
         },
@@ -674,7 +553,7 @@ const ChannelsWrapper = () => {
       dispatch({
         type: 0,
         payload: {
-          message: 'Error, unable to remove members.',
+          message: 'エラー。メンバーの削除に失敗しました',
           severity: 'error',
         },
       });
@@ -691,7 +570,7 @@ const ChannelsWrapper = () => {
       dispatch({
         type: 0,
         payload: {
-          message: `Successfully left ${activeChannel.Name}.`,
+          message: `チャネル「${activeChannel.Name}」から退出しました`,
           severity: 'success',
           autoClose: true,
         },
@@ -701,20 +580,12 @@ const ChannelsWrapper = () => {
       dispatch({
         type: 0,
         payload: {
-          message: 'Error, unable to leave the channel.',
+          message: 'エラー。チャネルからの退出に失敗しました',
           severity: 'error',
         },
       });
     }
   };
-
-  const [isRestricted, setIsRestricted] = useState(
-    activeChannel.Mode === 'RESTRICTED'
-  );
-
-  useEffect(() => {
-    setIsRestricted(activeChannel.Mode === 'RESTRICTED');
-  }, [activeChannel]);
 
   const loadUserActions = (role, channel) => {
     const map =
@@ -729,25 +600,7 @@ const ChannelsWrapper = () => {
 
     const joinChannelOption = (
       <PopOverItem key="join_channel" as="button" onClick={joinChannel}>
-        <span>Join Channel</span>
-      </PopOverItem>
-    );
-    const viewDetailsOption = (
-      <PopOverItem
-        key="view_channel_details"
-        as="button"
-        onClick={() => setModal('ViewDetails')}
-      >
-        <span>View channel details</span>
-      </PopOverItem>
-    );
-    const editChannelOption = (
-      <PopOverItem
-        key="edit_channel"
-        as="button"
-        onClick={() => setModal('EditChannel')}
-      >
-        <span>Edit channel</span>
+        <span>チャネルに参加</span>
       </PopOverItem>
     );
     const viewMembersOption = (
@@ -756,16 +609,7 @@ const ChannelsWrapper = () => {
         as="button"
         onClick={() => setModal('ViewMembers')}
       >
-        <span>View members</span>
-      </PopOverItem>
-    );
-    const addMembersOption = (
-      <PopOverItem
-        key="add_member"
-        as="button"
-        onClick={() => setModal('AddMembers')}
-      >
-        <span>Add members</span>
+        <span>メンバー一覧</span>
       </PopOverItem>
     );
     const manageMembersOption = (
@@ -774,17 +618,17 @@ const ChannelsWrapper = () => {
         as="button"
         onClick={() => setModal('ManageMembers')}
       >
-        <span>Manage members</span>
+        <span>メンバーを編集</span>
       </PopOverItem>
     );
     const startMeetingOption = (
       <PopOverItem key="start_meeting" as="button" onClick={startMeeting}>
-        <span>Start meeting</span>
+        <span>会議を開始</span>
       </PopOverItem>
     );
     const joinMeetingOption = (
       <PopOverItem key="join_meeting" as="button" onClick={joinMeeting}>
-        <span>Join meeting</span>
+        <span>会議に参加</span>
       </PopOverItem>
     );
     const leaveChannelOption = (
@@ -793,7 +637,7 @@ const ChannelsWrapper = () => {
         as="button"
         onClick={() => setModal('LeaveChannel')}
       >
-      <span>Leave channel</span>
+      <span>チャネルから退出</span>
       </PopOverItem>
     );
     const deleteChannelOption = (
@@ -802,88 +646,33 @@ const ChannelsWrapper = () => {
         as="button"
         onClick={() => setModal('DeleteChannel')}
       >
-        <span>Delete channel</span>
+        <span>チャネルを削除</span>
       </PopOverItem>
     );
     const meetingModeratorActions = [
-      viewDetailsOption,
-      <PopOverSeparator key="separator1" className="separator" />,
-      addMembersOption,
       manageMembersOption,
-      <PopOverSeparator key="separator2" className="separator" />,
       joinMeetingOption,
-      <PopOverSeparator key="separator3" className="separator" />,
       leaveChannelOption,
       deleteChannelOption,
     ];
     const meetingMemberActions = [
-      viewDetailsOption,
-      <PopOverSeparator key="separator1" className="separator" />,
       viewMembersOption,
-      <PopOverSeparator key="separator2" className="separator" />,
       joinMeetingOption,
-      <PopOverSeparator key="separator3" className="separator" />,
       leaveChannelOption,
     ];
     const moderatorActions = [
-      viewDetailsOption,
-      editChannelOption,
-      <PopOverSeparator key="separator2" className="separator" />,
-      addMembersOption,
       manageMembersOption,
-      <PopOverSeparator key="separator3" className="separator" />,
       startMeetingOption,
-      <PopOverSeparator key="separator5" className="separator" />,
       leaveChannelOption,
       deleteChannelOption,
     ];
     const restrictedMemberActions = [
-      viewDetailsOption,
-      <PopOverSeparator key="separator2" className="separator" />,
       viewMembersOption,
-      <PopOverSeparator key="separator3" className="separator" />,
       startMeetingOption,
-      <PopOverSeparator key="separator4" className="separator" />,
-      leaveChannelOption,
-    ];
-    const unrestrictedMemberActions = [
-      viewDetailsOption,
-      <PopOverSeparator key="separator2" className="separator" />,
-      viewMembersOption,
-      addMembersOption,
-      <PopOverSeparator key="separator3" className="separator" />,
-      leaveChannelOption,
-    ];
-    const noMeetingModeratorActions = [
-      viewDetailsOption,
-      editChannelOption,
-      <PopOverSeparator key="separator1" className="separator" />,
-      addMembersOption,
-      manageMembersOption,
-      <PopOverSeparator key="separator2" className="separator" />,
-      leaveChannelOption,
-      deleteChannelOption,
-    ];
-    const noMeetingRestrictedMemberActions = [
-      viewDetailsOption,
-      <PopOverSeparator key="separator1" className="separator" />,
-      viewMembersOption,
-      <PopOverSeparator key="separator2" className="separator" />,
-      leaveChannelOption,
-    ];
-    const noMeetingUnrestrictedMemberActions = [
-      viewDetailsOption,
-      <PopOverSeparator key="separator1" className="separator" />,
-      viewMembersOption,
-      addMembersOption,
-      <PopOverSeparator key="separator2" className="separator" />,
-      startMeetingOption,
-      <PopOverSeparator key="separator3" className="separator" />,
       leaveChannelOption,
     ];
     const nonMemberActions = [
       joinChannelOption,
-      viewDetailsOption,
       viewMembersOption,
     ];
 
@@ -891,24 +680,17 @@ const ChannelsWrapper = () => {
       return nonMemberActions;
     }
 
-    if (appConfig.apiGatewayInvokeUrl) {
-      if (channel.Metadata) {
-        let metadata = JSON.parse(channel.Metadata);
-        if (metadata.isMeeting) {
-          return role === 'moderator' ? meetingModeratorActions : meetingMemberActions;
-        }
+    if (channel.Metadata) {
+      let metadata = JSON.parse(channel.Metadata);
+      if (metadata.isMeeting) {
+        return role === 'moderator' ? meetingModeratorActions : meetingMemberActions;
       }
-
-      if (role === 'moderator') {
-        return moderatorActions;
-      }
-      return isRestricted ? restrictedMemberActions : unrestrictedMemberActions;
     }
 
     if (role === 'moderator') {
-      return noMeetingModeratorActions;
+      return moderatorActions;
     }
-    return isRestricted ? noMeetingRestrictedMemberActions : noMeetingUnrestrictedMemberActions;
+    return restrictedMemberActions;
   };
 
   return (
@@ -919,7 +701,6 @@ const ChannelsWrapper = () => {
         activeChannel={activeChannel}
         meetingInfo={meetingInfo}
         userId={userId}
-        onAddMember={onAddMember}
         handleChannelDeletion={handleChannelDeletion}
         handleDeleteMemberships={handleDeleteMemberships}
         handleJoinMeeting={handleJoinMeeting}
@@ -933,32 +714,21 @@ const ChannelsWrapper = () => {
         handleLeaveChannel={handleLeaveChannel}
       />
       <div className="channel-list-wrapper">
-        {activeView != 'Moderator' ? (
-          <div className="channel-list-header">
-            <div className="channel-list-header-title">Channels</div>
-            <IconButton
-              className="create-channel-button channel-options"
-              onClick={() => setModal('NewChannel')}
-              icon={<Dots width="1.5rem" height="1.5rem" />}
-            />
-          </div>
-        ) : (
-          <div className="channel-list-header">
-            <SecondaryButton
-              label="Back"
-              onClick={handleSwichViewClick}
-              className={"create-back-button"}
-            />
-          </div>
-        )}
+        <div className="channel-list-header">
+          <div className="channel-list-header-title">チャネル一覧</div>
+          <IconButton
+            className="create-channel-button channel-options"
+            onClick={() => setModal('NewChannel')}
+            icon={<Dots width="1.5rem" height="1.5rem" />}
+          />
+        </div>
         <ChannelList
           style={{
             padding: '8px',
+            width: '100%'
           }}
         >
-          {activeView == 'User'
-            ? channelList.map((channel) => getChannels(channel))
-            : getChannels(moderatedChannel)}
+          {channelList.map((channel) => getChannels(channel))}
         </ChannelList>
       </div>
     </>

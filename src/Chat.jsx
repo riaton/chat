@@ -10,7 +10,6 @@ import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import { ThemeProvider } from 'styled-components';
 import {
   MeetingProvider,
-  lightTheme,
   NotificationProvider,
   darkTheme,
   GlobalStyles,
@@ -73,10 +72,8 @@ const Chat = () => (
 );
 
 const Theme = ({ children }) => {
-  const { theme } = useAppState();
-
   return (
-    <ThemeProvider theme={theme === 'light' ? lightTheme : darkTheme}>
+    <ThemeProvider theme={darkTheme}>
       <GlobalStyles />
       {children}
     </ThemeProvider>

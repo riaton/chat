@@ -26,27 +26,9 @@ export const AppStateProvider = ({ children }) => {
     return storedUserName || '';
   });
 
-  // Theme
-  const [theme, setTheme] = useState(() => {
-    const storedTheme = localStorage.getItem('theme');
-    return storedTheme || 'light';
-  });
-
-  const toggleTheme = () => {
-    if (theme === 'light') {
-      setTheme('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      setTheme('light');
-      localStorage.setItem('theme', 'light');
-    }
-  };
-
   const providerValue = {
     meetingId,
     localUserName,
-    theme,
-    toggleTheme,
     setAppMeetingInfo
   };
 

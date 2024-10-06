@@ -18,8 +18,6 @@ import {
 import './ChannelModals.css';
 
 export const ViewMembersModal = ({ onClose, channel, members, moderators }) => {
-  // TODO: Add search functionality
-
   const modArns = moderators.map((m) => m.Moderator.Arn);
 
   const channelMembers = members.map((m) => {
@@ -42,12 +40,12 @@ export const ViewMembersModal = ({ onClose, channel, members, moderators }) => {
 
   return (
     <Modal onClose={onClose} className="view-members">
-      <ModalHeader title={`${channel.Name} members`} className="modal-header" />
+      <ModalHeader title={`チャネル「${channel.Name}」メンバー一覧`} className="modal-header" />
       <ModalBody className="main-section">
         <ul className="list">
           <li className="list-header row">
-            <div className="name">Name</div>
-            <div className="role">Role</div>
+            <div className="name">ユーザーID</div>
+            <div className="role">ロール</div>
           </li>
           {memberListItems}
         </ul>

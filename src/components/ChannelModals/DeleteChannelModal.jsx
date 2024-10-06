@@ -21,23 +21,23 @@ export const DeleteChannelModal = ({
 }) => {
   return (
     <Modal onClose={onClose}>
-      <ModalHeader title={`Delete channel ${channel.Name}`} />
+      <ModalHeader title={`チャネル「${channel.Name}」を削除しますか？`} />
       <ModalBody>
         <form
           onSubmit={(e) => handleChannelDeletion(e, channel.ChannelArn, channel.Metadata)}
           id="deletion-form"
         />
-        <p>You cannot undo this action.</p>
+        <p>この操作は取り消しできません</p>
       </ModalBody>
       <ModalButtonGroup
         primaryButtons={[
           <ModalButton
-            label="Delete"
+            label="削除"
             form="deletion-form"
             type="submit"
             variant="primary"
           />,
-          <ModalButton label="Cancel" closesModal variant="secondary" />,
+          <ModalButton label="キャンセル" closesModal variant="secondary" />,
         ]}
       />
     </Modal>

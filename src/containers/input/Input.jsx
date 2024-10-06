@@ -7,13 +7,7 @@
 /* Copyright 2024 Riaton. All Rights Reserved. */
 
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  Input as InputComponent,
-  Attachment,
-  IconButton,
-  useNotificationDispatch,
-  Remove,
-  Label,
+import { Input as InputComponent
 } from 'amazon-chime-sdk-component-library-react';
 
 import debounce from 'lodash/debounce';
@@ -24,20 +18,15 @@ import {
   sendChannelMessage,
   getChannelMessage,
 } from '../../api/ChimeAPI';
-import formatBytes from '../../utilities/formatBytes';
 import { useChatMessagingState, useChatChannelState, } from '../../providers/ChatMessagesProvider';
-import { useAuthContext, } from '../../providers/AuthProvider';
 
 import './Input.css';
 
 const Input = ({ activeChannelArn, member, hasMembership }) => {
   const [text, setText] = useState('');
   const inputRef = useRef();
-  const notificationDispatch = useNotificationDispatch();
   const { messages, setMessages } = useChatMessagingState();
-  const { activeChannel, } = useChatChannelState();
-
-  const { isAnonymous } = useAuthContext();
+  const { activeChannel } = useChatChannelState();
 
   const resetState = () => {
     setText('');
@@ -50,16 +39,13 @@ const Input = ({ activeChannelArn, member, hasMembership }) => {
   }, [activeChannelArn]);
   const eventHandler = async () => {
     const content = JSON.stringify({Typing: 'Indicator'});
-    if(!activeChannel.ElasticChannelConfiguration && !activeChannel.SubChannelId){
-      await sendChannelMessage(
-        activeChannel.ChannelArn,
-        content,
-        'NON_PERSISTENT',
-        'CONTROL',
-        member,
-        activeChannel.SubChannelId,
+    await sendChannelMessage(
+      activeChannel.ChannelArn,
+      content,
+      'NON_PERSISTENT',
+      'CONTROL',
+      member
     );
-    }
   };
   const eventHandlerWithDebounce = React.useCallback(debounce(eventHandler, 500), []);
 
@@ -77,10 +63,10 @@ const Input = ({ activeChannelArn, member, hasMembership }) => {
     e.preventDefault();
 
     let sendMessageResponse;
-    sendMessageResponse = await sendChannelMessage(activeChannelArn, text, Persistence.PERSISTENT, MessageType.STANDARD, member, activeChannel.SubChannelId);
+    sendMessageResponse = await sendChannelMessage(activeChannelArn, text, Persistence.PERSISTENT, MessageType.STANDARD, member);
     resetState();
     if (sendMessageResponse.response.Status == 'PENDING') {
-      const sentMessage = await getChannelMessage(activeChannelArn, member, sendMessageResponse.response.MessageId, activeChannel.SubChannelId);
+      const sentMessage = await getChannelMessage(activeChannelArn, member, sendMessageResponse.response.MessageId);
       const newMessages = [...messages, sentMessage];
       setMessages(newMessages);
     }
@@ -94,7 +80,7 @@ const Input = ({ activeChannelArn, member, hasMembership }) => {
             onChange={onChange}
             value={text}
             type="text"
-            placeholder="Type your message"
+            placeholder="メッセージを入力"
             autoFocus
             className="text-input"
             ref={inputRef}
@@ -105,7 +91,7 @@ const Input = ({ activeChannelArn, member, hasMembership }) => {
   }
   return (
     <div className="message-input-container join-channel-message">
-      Join this channel to send messages.
+      メッセージを送信するにはチャネルに参加してください
     </div>
   );
 };

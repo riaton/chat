@@ -18,19 +18,19 @@ export const LeaveChannelModal = ({ onClose, channel, handleLeaveChannel }) => {
   const userPermission = useUserPermission();
   return (
     <Modal onClose={onClose}>
-      <ModalHeader title={`Leave ${channel.Name}?`} />
+      <ModalHeader title={`チャネル「${channel.Name}」から退出しますか？`} />
       <ModalBody>
-        <p>You cannot undo this action.</p>
+        <p>この操作は取り消しできません</p>
       </ModalBody>
       <ModalButtonGroup
         primaryButtons={[
           <ModalButton
-            label="Leave"
+            label="退出"
             onClick={handleLeaveChannel}
             variant="primary"
             closesModal
           />,
-          <ModalButton label="Cancel" closesModal variant="secondary" />,
+          <ModalButton label="キャンセル" closesModal variant="secondary" />,
         ]}
       />
     </Modal>

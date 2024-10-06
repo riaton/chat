@@ -152,25 +152,6 @@ async function listChannelMessages(
   return { Messages: messages, NextToken: response.NextToken };
 }
 
-async function listAppInstanceUsers(appInstanceArn, userId, nextToken = null) {
-  console.log('listAppInstanceUsers called');
-  const chimeBearerArn = createMemberArn(userId);
-  const params = {
-    AppInstanceArn: appInstanceArn,
-    NextToken: nextToken,
-    ChimeBearer: chimeBearerArn,
-  };
-
-  const request = (await chimeIdentityClient()).listAppInstanceUsers(params);
-  request.on('build', function () {
-    request.httpRequest.headers[appInstanceUserArnHeader] = createMemberArn(
-      userId
-    );
-  });
-  const response = await request.promise();
-  return response.AppInstanceUsers;
-}
-
 async function createChannelMembership(
   channelArn,
   memberArn,
@@ -229,15 +210,13 @@ async function createChannel(
   name,
   mode,
   privacy,
-  elasticChannelConfiguration,
   userId
 ) {
   console.log('createChannel called');
 
   const chimeBearerArn = createMemberArn(userId);
   if (!metadata && privacy === 'PUBLIC') {
-    const channelType = elasticChannelConfiguration ? 'PUBLIC_ELASTIC' : 'PUBLIC_STANDARD';
-    metadata = JSON.stringify({ ChannelType: channelType });
+    metadata = JSON.stringify({ ChannelType: 'PUBLIC_STANDARD' });
   }
 
   const params = {
@@ -249,9 +228,6 @@ async function createChannel(
     ChimeBearer: chimeBearerArn,
   };
 
-  if (elasticChannelConfiguration) {
-    params['ElasticChannelConfiguration'] = elasticChannelConfiguration;
-  }
   const request = (await chimeMessagingClient()).createChannel(params);
   request.on('build', function () {
     request.httpRequest.headers[appInstanceUserArnHeader] = createMemberArn(
@@ -325,20 +301,6 @@ async function listChannels(appInstanceArn, userId) {
   const response = await request.promise();
   const channels = response.Channels;
   return channels;
-}
-
-async function listChannelsModeratedByAppInstanceUser(userId) {
-  console.log('listChannelsModeratedByAppInstanceUser called');
-
-  const chimeBearerArn = createMemberArn(userId);
-  const params = {
-    ChimeBearer: chimeBearerArn,
-  };
-  const request = (
-    await chimeMessagingClient()
-  ).listChannelsModeratedByAppInstanceUser(params);
-  const response = await request.promise();
-  return response.Channels;
 }
 
 async function deleteChannel(channelArn, userId) {
@@ -522,10 +484,6 @@ export {
   getMessagingSessionEndpoint,
   //AppInstanceUserが所属しているChannel一覧を取得する(管理者のみ)
   listChannelMembershipsForAppInstanceUser,
-  //?? AppInstanceUser によってモデレートされるチャネルのリストを取得する?
-  listChannelsModeratedByAppInstanceUser,
-  //appInstanceUser一覧を取得する<identity>
-  listAppInstanceUsers,
   //会議を作成する<backend>
   createMeeting,
   //会議に参加する <backend>

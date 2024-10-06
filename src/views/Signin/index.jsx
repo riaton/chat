@@ -20,7 +20,7 @@ const Signin = () => {
 
   const provider = <LoginWithCognito register={userSignUp} login={userSignIn} />
 
-  const signInMessage = 'Sign in with ';
+  const signInMessage = 'ログイン';
 
   return (
       <Grid
@@ -39,7 +39,7 @@ const Signin = () => {
               }}
               className="app-heading"
           >
-            Chat App
+            Meeting App
           </Heading>
         </Cell>
         <Cell gridArea="main">

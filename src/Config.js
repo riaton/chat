@@ -8,11 +8,11 @@ import data from './backend/serverless/appconfig.json'
 const appConfigJson = Object.assign({}, ...data.map((x) => ({[x.OutputKey]: x.OutputValue})));
 
 const appConfig = {
-    apiGatewayInvokeUrl: appConfigJson.apiGatewayInvokeUrl,
-    cognitoUserPoolId: appConfigJson.cognitoUserPoolId,
-    cognitoAppClientId: appConfigJson.cognitoAppClientId,
-    cognitoIdentityPoolId: appConfigJson.cognitoIdentityPoolId,
-    appInstanceArn: appConfigJson.appInstanceArn,
-    region: 'ap-northeast-1', 
+    apiGatewayInvokeUrl: '' || appConfigJson.apiGatewayInvokeUrl,
+    cognitoUserPoolId: '' || appConfigJson.cognitoUserPoolId,
+    cognitoAppClientId: '' || appConfigJson.cognitoAppClientId,
+    cognitoIdentityPoolId: '' || appConfigJson.cognitoIdentityPoolId,
+    appInstanceArn: '' || appConfigJson.appInstanceArn,
+    region: 'ap-northeast-1',  
 };
 export default appConfig;

@@ -22,25 +22,13 @@ import { useAuthContext } from '../../providers/AuthProvider';
 
 export const NewChannelModal = ({ onClose, onCreateChannel }) => {
   const [name, setName] = useState('');
-  const [privacy, setPrivacy] = useState('PRIVATE');
-  const [mode, setMode] = useState('RESTRICTED');
-  const [channelType, setChannelType] = useState('STANDARD');
+  const privacy = 'PUBLIC';
+  const mode = 'RESTRICTED';
   const [userName, setUserName] = useState('');
   const { member } = useAuthContext();
 
   const onNameChange = (e) => {
     setName(e.target.value);
-  };
-
-  const onPrivacyChange = (e) => {
-    setPrivacy(e.target.value);
-    if(e.target.value == 'PUBLIC'){
-      setMode('RESTRICTED');
-    }
-  };
-
-  const onModeChange = (e) => {
-    setMode(e.target.value);
   };
 
   const onTestChannel = (
@@ -55,7 +43,7 @@ export const NewChannelModal = ({ onClose, onCreateChannel }) => {
 
   return (
     <Modal size="lg" onClose={onClose}>
-      <ModalHeader title="Add channel" />
+      <ModalHeader title="チャネル作成" />
       <ModalBody>
         <form
           onSubmit={(e) =>
@@ -69,7 +57,7 @@ export const NewChannelModal = ({ onClose, onCreateChannel }) => {
           id="new-channel-form"
         >
           <div className="ch-form-field-input">
-            <Label className="lbl">Channel name</Label>
+            <Label className="lbl">チャネル名</Label>
             <Input
               className="value"
               showClear={false}
@@ -79,48 +67,20 @@ export const NewChannelModal = ({ onClose, onCreateChannel }) => {
             />
           </div>
           <div className="ch-form-field-input">
-            <Label className="lbl">Moderator</Label>
+            <Label className="lbl">管理者</Label>
             <Label className="value">{member.username}</Label>
           </div>
-          <div className="ch-form-field-input">
-            <Label className="lbl">Privacy (cannot be changed)</Label>
-            <div className="value ch-type-options">
-              <RadioGroup
-                options={[
-                  { value: 'PRIVATE', label: 'Private' },
-                  { value: 'PUBLIC', label: 'Public' },
-                ]}
-                value={privacy}
-                onChange={(e) => onPrivacyChange(e)}
-              />
-            </div>
-          </div>
-          {privacy !== 'PUBLIC' && channelType === 'STANDARD' && (
-            <div className="ch-form-field-input">
-              <Label className="lbl">Mode</Label>
-              <div className="value ch-mode-options">
-                <RadioGroup
-                  options={[
-                    { value: 'RESTRICTED', label: 'Restricted' },
-                    { value: 'UNRESTRICTED', label: 'Unrestricted' },
-                  ]}
-                  value={mode}
-                  onChange={(e) => onModeChange(e)}
-                />
-              </div>
-            </div>
-          )}
         </form>
       </ModalBody>
       <ModalButtonGroup
         primaryButtons={[
           <ModalButton
-            label="Add"
+            label="作成"
             type="submit"
             form="new-channel-form"
             variant="primary"
           />,
-          <ModalButton label="Cancel" closesModal variant="secondary" />,
+          <ModalButton label="キャンセル" closesModal variant="secondary" />,
         ]}
       />
     </Modal>

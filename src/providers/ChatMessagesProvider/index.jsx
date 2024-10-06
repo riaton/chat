@@ -50,17 +50,13 @@ const MessagingProvider = ({ children }) => {
   // Channel related
   const [activeChannel, setActiveChannel] = useState({});
   const [activeView, setActiveView] = useState('User');
-  const [activeSubChannel, setActiveSubChannel] = useState({});
   const [activeChannelFlow, setActiveChannelFlow]= useState({});
   const [activeChannelMemberships, setActiveChannelMemberships] = useState([]);
   const [activeChannelMembershipsWithPresence, setActiveChannelMembershipsWithPresence] = useState([]);
-  const activeSubChannelRef = useRef(activeSubChannel.ChannelArn);
   const activeChannelRef = useRef(activeChannel.ChannelArn);
   const [channelList, setChannelList] = useState([]);
   const [typingIndicator, setTypingIndicator] = useState(null);
   const [channelListModerator, setChannelListModerator] = useState([]);
-  const [subChannelList, setSubChannelList] = useState([]);
-  const [subChannelIds, setSubChannelIds] = useState([]);
   const [unreadChannels, setUnreadChannels] = useState([]);
   const unreadChannelsListRef = useRef(unreadChannels);
   const hasMembership =
@@ -74,7 +70,6 @@ const MessagingProvider = ({ children }) => {
   const channelListRef = useRef(channelList);
   const [moderatedChannel, setModeratedChannel] = useState('');
   const channelListModeratorRef = useRef(channelListModerator);
-  const subChannelListRef = useRef(subChannelList);
   const activeChannelMembershipsRef = useRef(activeChannelMemberships);
   const activeChannelMembershipsWithPresenceRef = useRef(activeChannelMembershipsWithPresence);
   const [channelMessageToken, setChannelMessageToken] = useState('');
@@ -86,10 +81,8 @@ const MessagingProvider = ({ children }) => {
     isAuthenticatedRef.current = isAuthenticated;
     messagesRef.current = messages;
     activeChannelRef.current = activeChannel;
-    activeSubChannelRef.current = activeSubChannel;
     channelListRef.current = channelList;
     channelListModeratorRef.current = channelListModerator;
-    subChannelListRef.current = subChannelList;
     unreadChannelsListRef.current = unreadChannels;
     activeChannelMembershipsRef.current = activeChannelMemberships;
     activeChannelMembershipsWithPresenceRef.current = activeChannelMembershipsWithPresence;
@@ -204,8 +197,7 @@ const MessagingProvider = ({ children }) => {
   }
 
   async function initChannelPresence(newChannel) {
-    if(!activeChannel.ElasticChannelConfiguration && !activeChannel.SubChannelId){
-      const status = `${PresenceStatusPrefix.Auto}${PresenceAutoStatus.Online}`;
+    const status = `${PresenceStatusPrefix.Auto}${PresenceAutoStatus.Online}`;
     let channelMetadata = JSON.parse(newChannel.Metadata || '{}');
     if (!channelMetadata.Presence) {
       console.log('channel does not use persistent presence. skip.')
@@ -246,10 +238,9 @@ const MessagingProvider = ({ children }) => {
         toPresenceMessage(PresenceMode.Auto, PresenceAutoStatus.Online, true),
         Persistence.NON_PERSISTENT,
         MessageType.CONTROL,
-        member,
-        activeChannel.SubChannelId,
+        member
     );
-    }
+    
   }
 
   const messagesProcessor = async (message) => {
@@ -319,21 +310,18 @@ const MessagingProvider = ({ children }) => {
         }
 
         // Process channel message
-        if (activeChannelRef.current.ChannelArn === record?.ChannelArn
-          && activeChannelRef.current.SubChannelId === record.SubChannelId) {
+        if (activeChannelRef.current.ChannelArn === record?.ChannelArn) {
           processChannelMessage(record);
         } else {
           const findMatch = unreadChannelsListRef.current.find(
-            (chArn) => (chArn === record.ChannelArn && activeChannelRef.current.SubChannelId === record.SubChannelId)
+            (chArn) => (chArn === record.ChannelArn)
           );
           if (findMatch) return;
-          if (!record.SubChannelId) {
-            const newUnreads = [
-              ...unreadChannelsListRef.current,
-              record.ChannelArn,
-            ];
-            setUnreadChannels(newUnreads);
-          }
+          const newUnreads = [
+            ...unreadChannelsListRef.current,
+            record.ChannelArn,
+          ];
+          setUnreadChannels(newUnreads);
         }
         break;
       // Channels actions
@@ -370,43 +358,28 @@ const MessagingProvider = ({ children }) => {
             member.userId
           );
 
-          if (record.SubChannelId) {
-            newChannel.SubChannelId = record.SubChannelId;
-            subChannelIds.push(record.SubChannelId);
-          }
-
           if (newChannel.Metadata) {
             let metadata = JSON.parse(newChannel.Metadata);
             if (metadata.isHidden) return;
           }
           var newChannelList = [];
           const channelType = JSON.parse(activeChannelRef.current.Metadata || '{}').ChannelType;
-          if (activeChannelRef.current.ElasticChannelConfiguration || channelType != 'PUBLIC_ELASTIC') {
-            newChannelList = mergeArrayOfObjects(
-              [newChannel],
-              channelListRef.current,
-              'ChannelArn'
+          newChannelList = mergeArrayOfObjects(
+            channelListRef.current,
+            [newChannel],
+            'ChannelArn'
+          );
+          if (record.ChannelArn == activeChannelRef.current.ChannelArn) {
+            const newMessages = await listChannelMessages(
+              newChannel.ChannelArn,
+              member.userId
             );
-          } else {
-            newChannelList = mergeArrayOfObjects(
-              channelListRef.current,
-              [newChannel],
-              'ChannelArn'
-            );
-            if (record.ChannelArn == activeChannelRef.current.ChannelArn
-              && channelType == 'PUBLIC_ELASTIC') {
-              const newMessages = await listChannelMessages(
-                newChannel.ChannelArn,
-                member.userId,
-                newChannel.SubChannelId
-              );
-              setMessages(newMessages.Messages);
-              setChannelMessageToken(newMessages.NextToken);
-              setActiveChannel(newChannel);
-            }
+            setMessages(newMessages.Messages);
+            setChannelMessageToken(newMessages.NextToken);
+            setActiveChannel(newChannel);
           }
+          
           setChannelList(newChannelList);
-
           // If channel uses persistent presence, save status for the user
           await initChannelPresence(newChannel);
         }
@@ -421,13 +394,6 @@ const MessagingProvider = ({ children }) => {
             member.userId
           );
           var newChannelList;
-          if (record.SubChannelId) {
-            channel.SubChannelId = record.SubChannelId;
-            if (activeChannelRef.current.ChannelArn === record?.ChannelArn) {
-              addUpdateDisabledMessage(record.ChannelArn);
-              setActiveChannel(channel);
-            }
-          }
           newChannelList = mergeArrayOfObjects(
             channelListRef.current,
             [channel],
@@ -444,19 +410,7 @@ const MessagingProvider = ({ children }) => {
               (chRef) => chRef.ChannelArn !== record.ChannelArn
             )
           );
-          if (record.SubChannelId) {
-            const foundIndex = subChannelIds.findIndex(
-              ori => ori === record.SubChannelId
-            );
-            subChannelIds.splice(foundIndex, 1);
-            setSubChannelIds(subChannelIds);
-            const newSubChannelList = subChannelListRef.current.filter(
-              ori => ori.SubChannelId !== record.SubChannelId
-            );
-            setSubChannelList(newSubChannelList);
-          }
-          if (activeChannelRef.current.ChannelArn === record.ChannelArn
-            && activeChannelRef.current.SubChannelId === record.SubChannelId) {
+          if (activeChannelRef.current.ChannelArn === record.ChannelArn) {
             setActiveChannel({});
           }
         } else {
@@ -491,17 +445,12 @@ const MessagingProvider = ({ children }) => {
   const channelStateValue = {
     channelList,
     channelListModerator,
-    subChannelList,
-    subChannelIds,
     activeChannel,
     activeView,
-    activeSubChannel,
     activeChannelFlow,
     activeChannelRef,
-    activeSubChannelRef,
     channelListRef,
     channelListModeratorRef,
-    subChannelListRef,
     unreadChannels,
     activeChannelMemberships,
     activeChannelMembershipsWithPresence,
@@ -511,15 +460,12 @@ const MessagingProvider = ({ children }) => {
     meetingInfo,
     setActiveChannel,
     setActiveView,
-    setActiveSubChannel,
     setActiveChannelFlow,
     setActiveChannelMemberships,
     setActiveChannelMembershipsWithPresence,
     setChannelMessageToken,
     setChannelList,
     setChannelListModerator,
-    setSubChannelList,
-    setSubChannelIds,
     setUnreadChannels,
     setMeetingInfo,
     moderatedChannel,
@@ -577,5 +523,4 @@ export {
   useChatChannelState,
   useChatMessagingService,
   useChatMessagingState,
-  
 };

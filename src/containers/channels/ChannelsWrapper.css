@@ -19,6 +19,11 @@ button.create-channel-button {
   align-items: center;
   cursor: unset;
 }
+.channel-list-header-title {
+  font-size: 1.3rem;
+  font-weight: 300;
+  margin: auto;
+}
 
 ul.ch-popover-menu {
   backdrop-filter: none;

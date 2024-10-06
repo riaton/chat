@@ -40,7 +40,7 @@ export const JoinMeetingModal = ({
         <ModalButtonGroup 
           primaryButtons={[
             <ModalButton className="join-button"
-              label="Join"
+              label="参加"
               form="join-meeting-form"
               type="submit"
               variant="primary"

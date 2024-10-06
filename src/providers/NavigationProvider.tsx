@@ -20,7 +20,6 @@ export type NavigationContextType = {
   showNavbar: boolean;
   showRoster: boolean;
   showChat: boolean;
-  showMetrics: boolean;
   toggleRoster: () => void;
   toggleChat: () => void;
   toggleNavbar: () => void;
@@ -30,7 +29,6 @@ export type NavigationContextType = {
   closeChat: () => void;
   openNavbar: () => void;
   closeNavbar: () => void;
-  toggleMetrics: () => void;
 };
 
 type Props = {
@@ -47,7 +45,6 @@ const NavigationProvider = ({ children }: Props) => {
   const [showNavbar, setShowNavbar] = useState(() => isDesktop());
   const [showRoster, setShowRoster] = useState(() => isDesktop());
   const [showChat, setShowChat] = useState(false);
-  const [showMetrics, setShowMetrics] = useState(false);
   const isDesktopView = useRef(isDesktop());
 
   const location = useLocation();
@@ -97,10 +94,6 @@ const NavigationProvider = ({ children }: Props) => {
     setShowNavbar(!showNavbar);
   };
 
-  const toggleMetrics = () => {
-    setShowMetrics(currentState => !currentState);
-  };
-
   const openNavbar = (): void => {
     setShowNavbar(true);
   };
@@ -129,11 +122,9 @@ const NavigationProvider = ({ children }: Props) => {
     showNavbar,
     showRoster,
     showChat,
-    showMetrics,
     toggleRoster,
     toggleChat,
     toggleNavbar,
-    toggleMetrics,
     openRoster,
     closeRoster,
     openChat,

@@ -24,7 +24,7 @@ export const ManageMembersModal = ({
 }) => {
   return (
     <Modal onClose={onClose}>
-      <ModalHeader title={`Manage members in ${channel.Name}`} />
+      <ModalHeader title={`チャネル「${channel.Name}」のメンバー編集`} />
       <ModalBody className="modal-body">
         <ContactPicker onChange={handlePickerChange} options={members} />
       </ModalBody>

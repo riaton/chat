@@ -34,6 +34,7 @@ section .modal-header {
 .view-members .main-section {
   background-color: #f0f1f2;
   padding: 1rem;
+  color: black;
 }
 
 .view-members .list {
@@ -173,18 +174,6 @@ section .modal-header {
   background-color: #fff;
   position: sticky;
   top: 57.3125px;
-  right: 0;
-  left: 0;
-  border-radius: 3px 3px 0 0;
-  border-bottom: 0.5px solid #d4d5d8;
-}
-
-.subChannel-row-header {
-  padding: 1rem;
-  z-index: 2;
-  background-color: #fff;
-  position: sticky;
-  top: 10px;
   right: 0;
   left: 0;
   border-radius: 3px 3px 0 0;
