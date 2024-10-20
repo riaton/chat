@@ -23,12 +23,6 @@ const AuthProvider = ({ children }) => {
   });
   // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  // isAnonymous (anon does not have access to write to S3 for attachments) default to cognito flow
-  const [isAnonymous, setAnonymous] = useState(false);
-  // Using CognitoIdp (if true use Cognito IDP to search for users when adding members to a room,
-  // else lookup using ListAppInstanceUsers API), default to Cognito flow
-  const [useCognitoIdp, setUseCognitoIdp] = useState(true);
-
 
   const userSignOut = async () => {
     try {
@@ -105,7 +99,6 @@ const AuthProvider = ({ children }) => {
   };
 
   const setAuthenticatedUserFromCognito = () => {
-    setUseCognitoIdp(true);
     Auth.currentUserInfo()
         .then(curUser => {
           setMember({ username: curUser.username, userId: curUser.id });
@@ -123,7 +116,6 @@ const AuthProvider = ({ children }) => {
               },
             });
           } else {
-            setAnonymous(false);
             setIsAuthenticated(true);
           }
         })
@@ -160,8 +152,6 @@ const AuthProvider = ({ children }) => {
   const authFulfiller = {
     member,
     isAuthenticated,
-    isAnonymous,
-    useCognitoIdp,
     userSignOut,
     userSignUp,
     userSignIn

@@ -13,6 +13,6 @@ const appConfig = {
     cognitoAppClientId: '' || appConfigJson.cognitoAppClientId,
     cognitoIdentityPoolId: '' || appConfigJson.cognitoIdentityPoolId,
     appInstanceArn: '' || appConfigJson.appInstanceArn,
-    region: 'ap-northeast-1',  
+    region: '',  // Only supported region for Amazon Chime SDK Messaging as of this writing
 };
 export default appConfig;

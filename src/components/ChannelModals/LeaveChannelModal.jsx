@@ -12,10 +12,8 @@ import {
   ModalButtonGroup,
   ModalButton,
 } from 'amazon-chime-sdk-component-library-react';
-import { useUserPermission } from '../../providers/UserPermissionProvider';
 
 export const LeaveChannelModal = ({ onClose, channel, handleLeaveChannel }) => {
-  const userPermission = useUserPermission();
   return (
     <Modal onClose={onClose}>
       <ModalHeader title={`チャネル「${channel.Name}」から退出しますか？`} />

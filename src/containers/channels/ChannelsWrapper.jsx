@@ -58,27 +58,20 @@ import { useAuthContext } from '../../providers/AuthProvider';
 import ModalManager from './ModalManager';
 import routes from '../../constants/routes';
 
-import {
-  PresenceAutoStatus,
-  PresenceMode,
-  PUBLISH_INTERVAL,
-  toPresenceMessage,
-} from '../../utilities/presence';
-
 import './ChannelsWrapper.css';
 
 const ChannelsWrapper = () => {
-  const history = useHistory();
-  const meetingManager = useMeetingManager();
-  const dispatch = useNotificationDispatch();
-  const [modal, setModal] = useState('');
-  const [selectedMember, setSelectedMember] = useState({}); // TODO change to an empty array when using batch api
-  const [activeChannelModerators, setActiveChannelModerators] = useState([]);
-  const { userId } = useAuthContext().member;
-  const { member, isAuthenticated } = useAuthContext();
+  const history = useHistory(); //ルーティング
+  const meetingManager = useMeetingManager(); //ミーティング
+  const dispatch = useNotificationDispatch(); //通知
+  const [modal, setModal] = useState(''); //モーダル
+  const [selectedMember, setSelectedMember] = useState({}); //選択されたメンバー
+  const [activeChannelModerators, setActiveChannelModerators] = useState([]); // 選択されているチャネルのモデレーター
+  const { userId } = useAuthContext().member; //ログインユーザーのID
+  const { member, isAuthenticated } = useAuthContext(); //ログインユーザー情報
   const userPermission = useUserPermission();
-  const isAuthenticatedRef = useRef(isAuthenticated);
-  const messagingUserArn = `${appConfig.appInstanceArn}/user/${userId}`;
+  const isAuthenticatedRef = useRef(isAuthenticated); //ログイン状態を参照
+  const messagingUserArn = `${appConfig.appInstanceArn}/user/${userId}`; //チャネルのメンバーのARN
   const {
     activeChannelRef, // 選択されているチャネルを参照
     channelList, // チャネルリスト
@@ -91,18 +84,15 @@ const ChannelsWrapper = () => {
     unreadChannels, // 選択されていないチャネル一覧
     setUnreadChannels, // 選択されていないチャネル一覧を設定
     hasMembership, //そのチャネルにメンバーとして参加しているかどうか
-    meetingInfo, 
-    setMeetingInfo,
   } = useChatChannelState();
   const { setMessages } = useChatMessagingState(); // そのChannelのメッセージ一覧を設定
-  const { setAppMeetingInfo } = useAppState();
-  const currentTheme = useTheme();
+  const { setAppMeetingInfo } = useAppState(); //開催中のミーティング情報
+  const currentTheme = useTheme(); //ダークモードのやつ
 
   useEffect(() => {
     isAuthenticatedRef.current = isAuthenticated;
   });
 
-  // get all channels
   useEffect(() => {
     if (!userId) return;
     const fetchChannels = async () => {
@@ -123,7 +113,6 @@ const ChannelsWrapper = () => {
       setChannelList(
         mergeArrayOfObjects(publicChannels, userChannelList, 'ChannelArn')
       );
-      await publishStatusToAllChannels();
     };
     fetchChannels();
   }, [userId]);
@@ -137,14 +126,12 @@ const ChannelsWrapper = () => {
     };
   }, [isAuthenticated]);
 
-  // get channel memberships
   useEffect(() => {
     if (
       activeChannel.ChannelArn
     ) {
       activeChannelRef.current = activeChannel;
       fetchMemberships();
-      publishStatusToAllChannels();
     }
   }, [activeChannel.ChannelArn]);
 
@@ -152,63 +139,8 @@ const ChannelsWrapper = () => {
   useEffect(() => {
     if (channelList.length > 0) {
       channelListRef.current = channelList;
-      startPublishStatusWithInterval();
     }
   }, [channelList]);
-
-  // get meeting id
-  useEffect(() => {
-    if (meetingInfo) {
-      setModal('JoinMeeting');
-    }
-  }, [meetingInfo]);
-
-  function startPublishStatusWithInterval() { // ステータスを定期的に送信？
-    let publishTimeout;
-    (async function publishStatusWithInterval() {
-      if (!isAuthenticatedRef.current) {
-        clearTimeout(publishTimeout);
-        return;
-      }
-      await publishStatusToAllChannels();
-      publishTimeout = setTimeout(publishStatusWithInterval, PUBLISH_INTERVAL);
-    })();
-  }
-
-  function computeAutoStatusForAChannel(channel) { // チャネルのステータスを計算?
-    const persistedPresence = JSON.parse(channel.Metadata || '{}').Presence;
-    const isCustomStatus =
-      persistedPresence && persistedPresence.filter((p) => p.u === userId)[0];
-    if (isCustomStatus) {
-      return null;
-    }
-
-    if (location.pathname.includes(routes.MEETING)) {
-      return PresenceAutoStatus.Busy;
-    } else if (channel.ChannelArn === activeChannelRef.current.ChannelArn) {
-      return PresenceAutoStatus.Online;
-    } else {
-      return PresenceAutoStatus.Idle;
-    }
-  }
-
-  async function publishStatusToAllChannels() { // チャネルにステータスを送信？
-    const servicePromises = [];
-    for (const channel of channelListRef.current) {
-      const channelType = JSON.parse(channel.Metadata || '{}').ChannelType;
-      const status = computeAutoStatusForAChannel(channel);
-      if (status) {
-        servicePromises.push(sendChannelMessage(
-          channel.ChannelArn,
-          toPresenceMessage(PresenceMode.Auto, status, true),
-          Persistence.NON_PERSISTENT,
-          MessageType.CONTROL,
-          member,
-        ));
-      }
-    }
-    return await Promise.all(servicePromises);
-  }
 
   const getChannels = (channel) => {
     {
@@ -319,9 +251,8 @@ const ChannelsWrapper = () => {
   const startMeeting = async (e) => {
     e.preventDefault();
 
-    let meetingName = `${activeChannel.Name} 会議`;
+    let meetingName = `${activeChannel.Name}(会議中)`;
 
-    // Create Meeting Channel and Memberships from existing Channel
     const meetingChannelArn = await createChannel(
       appConfig.appInstanceArn,
       null,
@@ -338,7 +269,7 @@ const ChannelsWrapper = () => {
       meetingChannelArn,
       membership.Member.Arn,
       userId
-    ));
+  ));
 
     // Create meeting and attendee for self
     meetingManager.getAttendee = createGetAttendeeCallback();
@@ -440,7 +371,6 @@ const ChannelsWrapper = () => {
       mods?.find(
         (moderator) => moderator.Moderator.Arn === messagingUserArn
       ) || false;
-    // Assessing user role for given channel
     userPermission.setRole(isModerator ? 'moderator' : 'user');
 
     const newChannel = await describeChannel(channel.ChannelArn, userId);
@@ -498,41 +428,6 @@ const ChannelsWrapper = () => {
     setSelectedMember(changes);
   };
 
-  const handleJoinMeeting = async (e, meeting, meetingChannelArn) => {
-    e.preventDefault();
-    const meetingChannel = {
-      ChannelArn: meetingChannelArn
-    };
-
-    await channelIdChangeHandler(meetingChannel);
-
-    meetingManager.getAttendee = createGetAttendeeCallback();
-    const { JoinInfo } = await createAttendee(member.username, member.userId, meetingChannelArn, meeting);
-    const meetingSessionConfiguration = new MeetingSessionConfiguration(
-      JoinInfo.Meeting,
-      JoinInfo.Attendee
-    );
-    await meetingManager.join(meetingSessionConfiguration);
-
-    setAppMeetingInfo(JoinInfo.Meeting.MeetingId, member.username);
-    setModal('');
-    setMeetingInfo(null);
-
-    history.push(routes.DEVICE);
-  };
-
-  const handleMessageAll = async (e, meetingChannelArn) => {
-    e.preventDefault();
-    setModal('');
-    setMeetingInfo(null);
-    
-    const meetingChannel = {
-      ChannelArn: meetingChannelArn
-    };
-
-    await channelIdChangeHandler(meetingChannel);
-  };
-
   const handleDeleteMemberships = () => {
     try {
       deleteChannelMembership(
@@ -588,16 +483,6 @@ const ChannelsWrapper = () => {
   };
 
   const loadUserActions = (role, channel) => {
-    const map =
-      channel.Metadata &&
-      JSON.parse(channel.Metadata).Presence &&
-      Object.fromEntries(
-        JSON.parse(channel.Metadata).Presence?.map((entry) => [
-          entry.u,
-          entry.s,
-        ])
-      );
-
     const joinChannelOption = (
       <PopOverItem key="join_channel" as="button" onClick={joinChannel}>
         <span>チャネルに参加</span>
@@ -696,22 +581,19 @@ const ChannelsWrapper = () => {
   return (
     <>
       <ModalManager
-        modal={modal}
-        setModal={setModal}
-        activeChannel={activeChannel}
-        meetingInfo={meetingInfo}
-        userId={userId}
-        handleChannelDeletion={handleChannelDeletion}
-        handleDeleteMemberships={handleDeleteMemberships}
-        handleJoinMeeting={handleJoinMeeting}
-        handleMessageAll={handleMessageAll}
-        handlePickerChange={handlePickerChange}
-        formatMemberships={formatMemberships}
-        activeChannelMemberships={activeChannelMemberships}
-        selectedMember={selectedMember}
-        onCreateChannel={onCreateChannel}
-        activeChannelModerators={activeChannelModerators}
-        handleLeaveChannel={handleLeaveChannel}
+        modal={modal}//
+        setModal={setModal}//
+        activeChannel={activeChannel}//
+        userId={userId}//
+        handleChannelDeletion={handleChannelDeletion}//
+        handleDeleteMemberships={handleDeleteMemberships}//
+        handlePickerChange={handlePickerChange}//
+        formatMemberships={formatMemberships}//
+        activeChannelMemberships={activeChannelMemberships}//
+        selectedMember={selectedMember}//
+        onCreateChannel={onCreateChannel}//
+        activeChannelModerators={activeChannelModerators}//
+        handleLeaveChannel={handleLeaveChannel}//
       />
       <div className="channel-list-wrapper">
         <div className="channel-list-header">

@@ -14,13 +14,13 @@ import { useAuthContext } from './AuthProvider';
 const IdentityServiceContext = createContext(null);
 
 export const IdentityProvider = ({ children }) => {
-  const { isAuthenticated, useCognitoIdp} = useAuthContext();
+  const { isAuthenticated } = useAuthContext();
   const [identityService] = useState(
-      useCognitoIdp ? () => new IdentityService(appConfig.region, appConfig.cognitoUserPoolId) : null
+      new IdentityService(appConfig.region, appConfig.cognitoUserPoolId)
   );
 
   useEffect(() => {
-    if (!identityService || !isAuthenticated || !useCognitoIdp) return;
+    if (!identityService || !isAuthenticated) return;
     identityService.setupClient();
   }, [identityService, isAuthenticated]);
 

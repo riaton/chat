@@ -14,12 +14,8 @@ const configureAmplify = () => {
       identityPoolId: appConfig.cognitoIdentityPoolId,
       // REQUIRED - Amazon Cognito Region
       region: appConfig.region,
-      // OPTIONAL - Amazon Cognito Federated Identity Pool Region
-      // Required only if it's different from Amazon Cognito Region
-      identityPoolRegion: appConfig.region,
       // OPTIONAL - Amazon Cognito User Pool ID
       userPoolId: appConfig.cognitoUserPoolId,
-      // OPTIONAL - Amazon Cognito Web Client ID (26-char alphanumeric string)
       userPoolWebClientId: appConfig.cognitoAppClientId
     },
     Storage: {

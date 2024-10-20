@@ -45,147 +45,13 @@ Resources:
         S3Bucket: aws-blog-business-productivity-chime-sdk
         S3Key: chat-sdk-demo/aws-sdk-chime-layer.zip
 
-  # Profanity and DLP processor lambda
-  ProfanityAndDLPProcessor:
-    Type: "AWS::Lambda::Function"
-    Properties:
-      Description: "Lambda that processes Chime channel messages for auto moderation"
-      Environment:
-        Variables:
-          DOCUMENT_CLASSIFIER_ENDPOINT: !Sub "arn:aws:comprehend:${AWS::Region}:${AWS::AccountId}:document-classifier-endpoint/profanityfilter"
-      FunctionName: !Sub ${DemoName}-ProfanityAndDLPProcessor
-      Handler: "index.handler"
-      Code:
-          S3Bucket: aws-sdk-chime-channelflowdemo-assets
-          S3Key: ChannelFlowProfanityDLPProcessor.zip
-      MemorySize: 128
-      Role: !GetAtt ProcessorLambdaRole.Arn
-      Runtime: nodejs16.x
-      Timeout: 30
-      Layers:
-        - !Ref AWSSDKChimeLayer
-      TracingConfig:
-        Mode: "PassThrough"
-
-  # Custom presence processor lambda
-  PresenceProcessor:
-    Type: "AWS::Lambda::Function"
-    Properties:
-      Description: "Lambda that processes Chime channel events for custom presence"
-      FunctionName: !Sub ${DemoName}-PresenceProcessor
-      Environment:
-        Variables:
-          CHIME_APP_INSTANCE_ADMIN_ID: !Sub ${AppInstanceAdminId}
-      Handler: "index.handler"
-      Code:
-          S3Bucket: aws-blog-business-productivity-chime-sdk
-          S3Key: presence-demo-assets/custom-presence-channel-processor.zip
-      MemorySize: 128
-      Role: !GetAtt PresenceProcessorLambdaRole.Arn
-      Runtime: nodejs16.x
-      Timeout: 30
-      Layers:
-        - !Ref AWSSDKChimeLayer
-      TracingConfig:
-        Mode: "PassThrough"
-
-  ProcessorLambdaRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      Path: "/"
-      RoleName: !Sub ${DemoName}-ProcessorLambdaRole
-      AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"lambda.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
-      MaxSessionDuration: 3600
-      Description: "Lambda role with Comprehend and Chime channel flow callback permissions for channel flow demo"
-      ManagedPolicyArns:
-        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-      Policies:
-        - PolicyName: !Sub ${DemoName}-ProcessorLambda-ComprehendAccess
-          PolicyDocument: |
-            {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Sid": "VisualEditor0",
-                        "Effect": "Allow",
-                        "Action": [
-                            "comprehend:BatchDetectDominantLanguage",
-                            "comprehend:DetectDominantLanguage",
-                            "comprehend:DetectPiiEntities",
-                            "comprehend:DetectSentiment",
-                            "comprehend:ClassifyDocument"
-                        ],
-                        "Resource": "*"
-                    }
-                ]
-            }
-        - PolicyName: !Sub ${DemoName}-ProcessorLambda-ChimeMessagingSDKAccess
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: "Allow"
-                Action:
-                  - "chime:ChannelFlowCallback"
-                Resource: !Sub "arn:aws:chime:${AWS::Region}:${AWS::AccountId}:app-instance/*"
-
-  PresenceProcessorLambdaRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      Path: "/"
-      RoleName: !Sub ${DemoName}-PresenceProcessorLambdaRole
-      AssumeRolePolicyDocument: "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"lambda.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
-      MaxSessionDuration: 3600
-      Description: "Lambda role with Chime SDK APIs access for custom presence demo"
-      ManagedPolicyArns:
-        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-      Policies:
-        - PolicyName: !Sub ${DemoName}-PresenceProcessorLambda-ChimeMessagingSDKAccess
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: "Allow"
-                Action:
-                  - "chime:ChannelFlowCallback"
-                  - "chime:DescribeChannel"
-                  - "chime:UpdateChannel"
-                Resource: !Sub "arn:aws:chime:${AWS::Region}:${AWS::AccountId}:app-instance/*"
-
-  PermissionForChimeToInvokeProfanityAndDLPProcessor:
-    Type: AWS::Lambda::Permission
-    DependsOn:
-      - "ProfanityAndDLPProcessor"
-    Properties:
-      FunctionName: !Sub ${DemoName}-ProfanityAndDLPProcessor
-      Action: "lambda:InvokeFunction"
-      Principal: "messaging.chime.amazonaws.com"
-      SourceAccount: {Ref: "AWS::AccountId"}
-      SourceArn: !Sub "arn:aws:chime:${AWS::Region}:${AWS::AccountId}:app-instance/*"
-
-  PermissionForChimeToInvokePresenceProcessor:
-    Type: AWS::Lambda::Permission
-    DependsOn:
-      - PresenceProcessor
-    Properties:
-      FunctionName: !Sub ${DemoName}-PresenceProcessor
-      Action: "lambda:InvokeFunction"
-      Principal: "messaging.chime.amazonaws.com"
-      SourceAccount: {Ref: "AWS::AccountId"}
-      SourceArn: !Sub "arn:aws:chime:${AWS::Region}:${AWS::AccountId}:app-instance/*"
-
   # Lambda that creates AWS Chime App Instance and Channel Flow resources as one off on stack creation
   # スタック作成時に一度だけAWS Chime App InstanceとChannel Flowリソースを作成するLambda
-  # このLambdaがDependOnのLamdabを登録している
+  # このLambdaがDependOnのLambdaを登録している
   ChimeAppInstanceLambda:
     Type: "AWS::Lambda::Function"
-    DependsOn:
-      - ProfanityAndDLPProcessor
-      - PresenceProcessor
     Properties:
       Handler: "index.handler"
-      Environment:
-        Variables:
-          PROCESSOR_LAMBDA_ARN: !GetAtt ProfanityAndDLPProcessor.Arn
-          PRESENCE_PROCESSOR_LAMBDA_ARN: !GetAtt PresenceProcessor.Arn
       Role: !GetAtt LambdaExecuteRole.Arn
       Runtime: nodejs16.x
       Timeout: 60
@@ -201,21 +67,6 @@ Resources:
 
           const chimeIdentity = new AWS.ChimeSDKIdentity({ region: process.env.AWS_REGION });
           const chimeMessaging = new AWS.ChimeSDKMessaging({ region: process.env.AWS_REGION });
-
-          const { PROCESSOR_LAMBDA_ARN, PRESENCE_PROCESSOR_LAMBDA_ARN } = process.env;
-
-          async function createChannelFlow(channelFlowParams) {
-            await chimeMessaging.createChannelFlow(channelFlowParams, function (err, data) {
-              if (err) {
-                console.log('Error calling create channel flow');
-                console.log(err, err.stack);
-              } else {
-                console.log(data); // successful  response
-                return data;
-              }
-
-            }).promise();
-          }
 
           exports.handler = async (event, context, callback) => {
             console.log("Event: \n", event);
@@ -237,42 +88,6 @@ Resources:
                   }
                 ).promise();
 
-                console.log("Creating channel flow resource for Profanity and DLP Flow");
-                await createChannelFlow({
-                  Name: "Profanity and DLP Flow",
-                  ClientRequestToken: `CreateChannelFlow-${uuidv4()}`,
-                  AppInstanceArn: appInstance.AppInstanceArn,
-                  Processors: [{
-                    ExecutionOrder: 1,
-                    Name: "ProfanityAndDLPProcessor",
-                    FallbackAction: 'ABORT',
-                    Configuration: {
-                      Lambda: {
-                        ResourceArn: PROCESSOR_LAMBDA_ARN,
-                        InvocationType: 'ASYNC'
-                      }
-                    }
-                  }]
-                });
-
-                console.log("Creating channel flow resource for Presence");
-                await createChannelFlow({
-                  Name: "Presence Channel Flow",
-                  ClientRequestToken: `CreateChannelFlow-${uuidv4()}`,
-                  AppInstanceArn: appInstance.AppInstanceArn,
-                  Processors: [{
-                    ExecutionOrder: 1,
-                    Name: "PresenceProcessor",
-                    FallbackAction: 'ABORT',
-                    Configuration: {
-                      Lambda: {
-                        ResourceArn: PRESENCE_PROCESSOR_LAMBDA_ARN,
-                        InvocationType: 'ASYNC'
-                      }
-                    }
-                  }]
-                });
-
                 await response.send(event, context, response.SUCCESS, appInstance);
               } catch (error) {
                 console.log("ERROR CAUGHT \n", error);
@@ -288,9 +103,6 @@ Resources:
   # Amazon Chime App Instanceとchannel flowの作成をトリガーする。
   TriggerChimeAppInstanceLambda:
     Type: AWS::CloudFormation::CustomResource
-    DependsOn:
-      - ProfanityAndDLPProcessor
-      - PresenceProcessor
     Properties:
       ServiceToken: !GetAtt ChimeAppInstanceLambda.Arn
 
@@ -375,28 +187,6 @@ Resources:
     Properties:
       ServiceToken: !GetAtt ChimeAppAdminLambda.Arn
 
-  # Creates an S3 bucket to store chat attachments
-  ChatAttachmentsBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      CorsConfiguration:
-        CorsRules:
-          - AllowedHeaders:
-              - "*"
-            AllowedMethods:
-              - GET
-              - HEAD
-              - PUT
-              - POST
-              - DELETE
-            AllowedOrigins:
-              - "*"
-            ExposedHeaders:
-              - "x-amz-server-side-encryption"
-              - "x-amz-request-id"
-              - "x-amz-id-2"
-            MaxAge: "3000"
-
   #Creates a role to allow SignIn Lambda to execute
   LambdaExecuteRole:
     Type: AWS::IAM::Role
@@ -424,14 +214,6 @@ Resources:
                   - 'chime:CreateAppInstanceAdmin'
                   - 'chime:CreateAppInstanceUser'
                 Resource: '*'
-        - PolicyName: !Sub ${DemoName}-LambdaChannelFlowCreatePolicy
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - 'chime:CreateChannelFlow'
-                Resource: !Sub "arn:aws:chime:${AWS::Region}:${AWS::AccountId}:app-instance/*"
         - PolicyName: !Sub ${DemoName}-LambdaCreateLogGroup
           PolicyDocument:
             Version: 2012-10-17
@@ -649,10 +431,6 @@ Resources:
                   - "chime:CreateChannelBan"
                   - "chime:ListChannelBans"
                   - "chime:DeleteChannelBan"
-                  - "chime:AssociateChannelFlow"
-                  - "chime:DisassociateChannelFlow"
-                  - "chime:DescribeChannelFlow"
-                  - "chime:ListChannelFlows"
                   - "chime:ListChannelsModeratedByAppInstanceUser"
                   - "chime:ListSubChannels"
                   - "chime:GetMeeting"

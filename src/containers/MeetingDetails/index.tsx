@@ -8,7 +8,6 @@ import React from 'react';
 
 import {
   Flex,
-  Heading,
 } from 'amazon-chime-sdk-component-library-react';
 
 import { useAppState } from '../../providers/AppStateProvider';
@@ -20,9 +19,6 @@ const MeetingDetails = () => {
   return (
     <Flex container layout="fill-space-centered">
       <Flex>
-        <Heading level={4} tag="h1">
-          Meeting information
-        </Heading>
         <StyledList>
           <div>
             <dt>Meeting ID</dt>

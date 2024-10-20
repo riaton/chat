@@ -11,30 +11,14 @@ import {
   VideoInputControl,
   ContentShareControl,
   AudioOutputControl,
-  ControlBarButton,
   useUserActivityState,
-  Dots
 } from 'amazon-chime-sdk-component-library-react';
 
 import EndMeetingControl from '../EndMeetingControl';
-import { useNavigation } from '../../providers/NavigationProvider';
 import { StyledControls } from './Styled';
 
 const MeetingControls = () => {
-  const { toggleNavbar, closeRoster, showRoster, closeChat, showChat } = useNavigation();
   const { isUserActive } = useUserActivityState();
-
-  const handleToggle = () => {
-    if (showRoster) {
-      closeRoster();
-    }
-
-    if (showChat) {
-      closeChat();
-    }
-
-    toggleNavbar();
-  };
 
   return (
     <StyledControls className="controls" active={!!isUserActive}>
@@ -43,12 +27,6 @@ const MeetingControls = () => {
         layout="undocked-horizontal"
         showLabels
       >
-        <ControlBarButton
-          className="mobile-toggle"
-          icon={<Dots />}
-          onClick={handleToggle}
-          label="Menu"
-        />
         <AudioInputControl />
         <VideoInputControl />
         <ContentShareControl />

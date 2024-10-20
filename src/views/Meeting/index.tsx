@@ -14,7 +14,6 @@ import { StyledLayout, StyledContent } from './Styled';
 // メッセージコンポーネント
 import NavigationControl from '../../containers/Navigation/NavigationControl';
 import { useNavigation } from '../../providers/NavigationProvider';
-//ミーティング詳細 DarkModeとかMeetingIdとか書いてあるやつ
 import MeetingDetails from '../../containers/MeetingDetails';
 import MeetingControls from '../../containers/MeetingControls';
 import useMeetingEndRedirect from '../../hooks/useMeetingEndRedirect';

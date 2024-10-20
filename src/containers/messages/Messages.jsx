@@ -79,20 +79,20 @@ const Messages = ({
 
   const discardModal = (
     <Modal onClose={() => setShowDiscardModal(false)}>
-      <ModalHeader title="Discard Changes?" />
+      <ModalHeader title="変更を取り消しますか？" />
       <ModalBody>
-        <div>You cannot undo this action.</div>
+        <div>この操作は取り消しできません</div>
         <ModalButtonGroup
           primaryButtons={[
             <ModalButton
-              label="Discard"
+              label="取り消し"
               type="submit"
               variant="primary"
               onClick={handleDiscardEdit}
               key="1"
             />,
             <ModalButton
-              label="Cancel"
+              label="キャンセル"
               variant="secondary"
               closesModal
               key="2"
@@ -121,7 +121,7 @@ const Messages = ({
       notificationDispatch({
         type: 0,
         payload: {
-          message: 'Error, unable to perform this action.',
+          message: 'メッセージの削除に失敗しました',
           severity: 'error',
         },
       });
@@ -131,20 +131,20 @@ const Messages = ({
 
   const redactModal = (
     <Modal onClose={handleCloseRedactModal}>
-      <ModalHeader title="Delete Message?" />
+      <ModalHeader title="メッセージを削除しますか？" />
       <ModalBody>
-        <div>You cannot undo this action.</div>
+        <div>この操作は取り消しできません</div>
         <ModalButtonGroup
           primaryButtons={[
             <ModalButton
-              label="Delete"
+              label="削除"
               type="submit"
               variant="primary"
               onClick={redact}
               key="1"
             />,
             <ModalButton
-              label="Cancel"
+              label="キャンセル"
               variant="secondary"
               closesModal
               key="2"
@@ -175,7 +175,7 @@ const Messages = ({
       notificationDispatch({
         type: 0,
         payload: {
-          message: 'Error, unable to perform this action.',
+          message: 'メッセージの編集に失敗しました',
           severity: 'error',
         },
       });

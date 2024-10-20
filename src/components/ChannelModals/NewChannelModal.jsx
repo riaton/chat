@@ -22,23 +22,11 @@ import { useAuthContext } from '../../providers/AuthProvider';
 
 export const NewChannelModal = ({ onClose, onCreateChannel }) => {
   const [name, setName] = useState('');
-  const privacy = 'PUBLIC';
-  const mode = 'RESTRICTED';
   const [userName, setUserName] = useState('');
   const { member } = useAuthContext();
 
   const onNameChange = (e) => {
     setName(e.target.value);
-  };
-
-  const onTestChannel = (
-    e,
-    name,
-    mode,
-    privacy
-  ) => {
-    console.log('create standard channel');
-    onCreateChannel(e, name, mode, privacy, null);
   };
 
   return (
@@ -47,12 +35,7 @@ export const NewChannelModal = ({ onClose, onCreateChannel }) => {
       <ModalBody>
         <form
           onSubmit={(e) =>
-            onTestChannel(
-              e,
-              name,
-              mode,
-              privacy
-            )
+            onCreateChannel(e, name, 'RESTRICTED', 'PUBLIC')
           }
           id="new-channel-form"
         >

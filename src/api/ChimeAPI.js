@@ -452,48 +452,26 @@ async function endMeeting(meetingId) {
 }
 
 export {
-  //メッセージ送信<Meesaging>
   sendChannelMessage,
-  //メッセージ取得<Messaging>
   getChannelMessage,
-  //メッセージ一覧取得
   listChannelMessages,
-  //Channelにメンバーを追加する
   createChannelMembership,
-  //Channelのメンバー一覧を取得する
   listChannelMemberships,
-  //Channelからメンバーを削除する
   deleteChannelMembership,
-  //Channelを作成する
   createChannel,
-  //Channelの詳細を取得する
   describeChannel,
-  //Channelの属性を変更する
   updateChannel,
-  //Channel一覧を取得する
   listChannels,
-  //Channelを削除する
   deleteChannel,
-  //ChannelのModerator一覧を取得する
   listChannelModerators,
-  //Channelのメッセージを更新する
   updateChannelMessage,
-  //メッセージを秘匿化する
   redactChannelMessage,
-  //MessagingSessionEndpointを取得する<Messaging>
   getMessagingSessionEndpoint,
-  //AppInstanceUserが所属しているChannel一覧を取得する(管理者のみ)
   listChannelMembershipsForAppInstanceUser,
-  //会議を作成する<backend>
   createMeeting,
-  //会議に参加する <backend>
   createAttendee,
-  //参加者IDを取得する<>
   createGetAttendeeCallback,
-  //会議を終了する<backend>
   endMeeting,
-  //ただの初期化<>
   resetAWSClients,
-  //会議情報を取得する<Meeetings>
   getMeeting,
 };

@@ -38,7 +38,6 @@ const Channels = () => {
       '
     >
       <Cell gridArea="heading">
-        {/* HEADING */}
         <Heading
           level={5}
           style={{
@@ -68,7 +67,6 @@ const Channels = () => {
             borderRight: `solid 1px ${currentTheme.colors.greys.grey30}`,
           }}
         >
-          {/* SIDEPANEL CHANNELS LIST */}
           <ChannelsWrapper />
         </div>
       </Cell>
